@@ -1,26 +1,42 @@
-import logo from '../../assets/logo.svg';
-
+import { Outlet } from 'react-router-dom';
+import Footer from '../Footer/Footer';
+import Header from '../Header/Header';
 import './App.scss';
+import SingleCollection from '../Collection/SingleCollection';
+import { useAppDispatch, useAppSelector } from '../../hooks/redux';
+import { useEffect } from 'react';
+import { fetchCollections } from '../../store/reducers/collectionsReducer';
+import { fetchUserInfo } from '../../store/reducers/userReducer';
+import Alert from '../Alert/Alert';
 
 function App() {
+  const dispatch = useAppDispatch();
+  const userId = useAppSelector((state) => state.user.loggedUser.id);
+
+  const userAlert = useAppSelector((state) => state.user.userAlert);
+  const collectionAlert = useAppSelector((state) => state.collections.collectionAlert);
+
+  useEffect(() => {
+    userId && dispatch(fetchUserInfo(userId as number));
+  }, []);
+
+  useEffect(() => {
+    dispatch(fetchCollections());
+  }, []);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-
-        <p>
-          Edit <code>src/components/App/App.tsx</code> and save to reload.
-        </p>
-
-        <a
-          className="App-link"
-          href="https://react.dev/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="App container mx-auto px-4 max-w-screen-xl">
+      <Header />
+      <main className="my-4">
+        {userAlert.message && (
+          <Alert type={userAlert.type} message={userAlert.message} />
+        )}
+        {collectionAlert.message && (
+          <Alert type={collectionAlert.type} message={collectionAlert.message} />
+        )}
+        <Outlet />
+      </main>
+      <Footer />
     </div>
   );
 }
