@@ -3,16 +3,15 @@ import { createAction, createReducer } from '@reduxjs/toolkit';
 interface AppState {
   showLogin: boolean;
   showModal: boolean;
-  redirectPath: string;
 }
 export const initialState: AppState = {
   showLogin: false,
   showModal: false,
-  redirectPath: '',
 };
 
 export const switchLoginDisplay = createAction('app/switchLoginDisplay');
 export const switchModalDisplay = createAction('app/switchModalDisplay');
+export const closeModal = createAction('app/closeModal');
 
 const appReducer = createReducer(initialState, (builder) => {
   builder.addCase(switchLoginDisplay, (state) => {
@@ -20,6 +19,9 @@ const appReducer = createReducer(initialState, (builder) => {
   });
   builder.addCase(switchModalDisplay, (state) => {
     state.showModal = !state.showModal;
+  })
+  builder.addCase(closeModal, (state) => {
+    state.showModal = false;
   });
 });
 
