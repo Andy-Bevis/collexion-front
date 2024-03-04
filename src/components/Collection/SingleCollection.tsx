@@ -1,24 +1,16 @@
-import React, { useEffect } from 'react';
-import Avatar from '../Avatar/Avatar';
+import { useEffect, useState } from 'react';
+import { Link, useLoaderData, useNavigate } from 'react-router-dom';
 import Rating from '../Rating/Rating';
 import ObjectCard from '../Object/ObjectCard';
 import { ICollection, IObject } from '../../types/types';
-import {
-  Link,
-  Navigate,
-  redirect,
-  useLoaderData,
-  useNavigate,
-  useParams,
-} from 'react-router-dom';
+import Avatar from '../Avatar/Avatar';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
-import { findCollection } from '../../store/selectors/collections';
 import {
   deleteCollection,
   fetchSingleCollection,
 } from '../../store/reducers/collectionsReducer';
 import Modal from '../Modal/Modal';
-import { switchModalDisplay } from '../../store/reducers/appReducer';
+import { closeModal, switchModalDisplay } from '../../store/reducers/appReducer';
 import { resetCurrentObject } from '../../store/reducers/objectsReducer';
 import {
   addToFavorites,
@@ -39,13 +31,10 @@ export default function SingleCollection() {
     (state) => state.user.loggedUser.myfavoritescollections
   );
 
-  // Triggered function sent to the modal component when the collection's delete button is clicked
-  const handleDelete = () => {
-    dispatch(deleteCollection(data.id));
-  };
-
+ 
   useEffect(() => {
     dispatch(fetchSingleCollection(data.id));
+    dispatch(closeModal());
   }, []);
 
   useEffect(() => {
@@ -59,8 +48,10 @@ export default function SingleCollection() {
         showModal && (
           // The modal receive the name of the action to trigger and the function to execute when the confirm button of the modal is clicked
           <Modal
-            actionLabel={'Supprimer la collection'}
-            action={handleDelete}
+            actionLabel="Supprimer la collection"
+            action="delete"
+            entity="collection"
+            id={data.id}
           />
         )
       }

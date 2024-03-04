@@ -1,7 +1,8 @@
-import React, { ChangeEvent, useEffect, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
-import { Navigate, redirect, useLocation, useParams } from 'react-router-dom';
 import {
+  fetchCollections,
   fetchSingleCollection,
   postCollection,
   resetCurrentCollection,
@@ -9,13 +10,10 @@ import {
   setCollectionImage,
   setCollectionName,
   setCollectionObjects,
-  setCollectionRedirectPath,
   setCollectionRelatedObjects,
   updateCollection,
   uploadCollectionImage,
 } from '../../store/reducers/collectionsReducer';
-import { Cloudinary } from '@cloudinary/url-gen';
-import { AdvancedImage, responsive, placeholder } from '@cloudinary/react';
 import { ICollection, IObject } from '../../types/types';
 
 type CurrentCollection = ICollection & {};
@@ -25,8 +23,6 @@ export default function SingleCollectionEdit() {
   const data: CurrentCollection = useAppSelector(
     (state) => state.collections.currentCollection
   );
-
-  const redirectPath = useAppSelector((state) => state.collections.redirectPath);
 
   const loggedUserId = useAppSelector((state) => state.user.loggedUser.id);
   console.log('loggedUserId', loggedUserId);
@@ -64,6 +60,10 @@ export default function SingleCollectionEdit() {
     dispatch(setCollectionRelatedObjects(extractedObjects));
     dispatch(setCollectionObjects(remainingObjects));
   }
+
+  // Use state to redirect to the collection page or the user page after the collection has been updated or created.
+  const [redirectPath, setRedirectPath] = useState<null | string>(null);
+
   useEffect(() => {
     location.pathname === '/collection/new' &&
       dispatch(resetCurrentCollection());
@@ -173,13 +173,20 @@ export default function SingleCollectionEdit() {
             data.id
               ? dispatch(updateCollection(data.id))
               : dispatch(postCollection());
-            data.id ? dispatch(setCollectionRedirectPath(`/collection/${data.id}`)) : dispatch(setCollectionRedirectPath(`/user/${loggedUserId}`));
+            data.id && dispatch(fetchSingleCollection(data.id));
+            data.id
+              ? setTimeout(() => {
+                  setRedirectPath(`/collection/${data.id}`);
+                }, 1000)
+              : setTimeout(() => {
+                  setRedirectPath(`/user/${loggedUserId}`);
+                }, 1000);
           }}
         >
           Mettre à jour
         </button>
       </form>
-      {redirectPath !== '' && <Navigate to={redirectPath} />}
+      {redirectPath && <Navigate to={redirectPath} />}
     </>
   );
 }

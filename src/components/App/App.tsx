@@ -1,10 +1,9 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import Footer from '../Footer/Footer';
 import Header from '../Header/Header';
 import './App.scss';
-import SingleCollection from '../Collection/SingleCollection';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
-import { useEffect } from 'react';
 import { fetchCollections } from '../../store/reducers/collectionsReducer';
 import { fetchUserInfo } from '../../store/reducers/userReducer';
 import Alert from '../Alert/Alert';
@@ -14,7 +13,12 @@ function App() {
   const userId = useAppSelector((state) => state.user.loggedUser.id);
 
   const userAlert = useAppSelector((state) => state.user.userAlert);
-  const collectionAlert = useAppSelector((state) => state.collections.collectionAlert);
+  const collectionAlert = useAppSelector(
+    (state) => state.collections.collectionAlert
+  );
+  const objectAlert = useAppSelector((state) => state.objects.objectAlert);
+
+  const location = useLocation();
 
   useEffect(() => {
     userId && dispatch(fetchUserInfo(userId as number));
@@ -24,6 +28,10 @@ function App() {
     dispatch(fetchCollections());
   }, []);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   return (
     <div className="App container mx-auto px-4 max-w-screen-xl">
       <Header />
@@ -32,7 +40,13 @@ function App() {
           <Alert type={userAlert.type} message={userAlert.message} />
         )}
         {collectionAlert.message && (
-          <Alert type={collectionAlert.type} message={collectionAlert.message} />
+          <Alert
+            type={collectionAlert.type}
+            message={collectionAlert.message}
+          />
+        )}
+        {objectAlert.message && (
+          <Alert type={objectAlert.type} message={objectAlert.message} />
         )}
         <Outlet />
       </main>

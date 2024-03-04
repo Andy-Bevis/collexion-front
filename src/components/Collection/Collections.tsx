@@ -1,16 +1,19 @@
-import React, { useEffect } from 'react';
-import { useLoaderData } from 'react-router-dom';
 import CollectionsList from './CollectionsList';
 import CollectionCTA from './CollectionCTA';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { ICollection } from '../../types/types';
-import { fetchCollections } from '../../store/reducers/collectionsReducer';
 import Filter from '../Filter/Filter';
 import Background from '../Background/Background';
+import { useEffect } from 'react';
+import { fetchCollections } from '../../store/reducers/collectionsReducer';
 
 export default function Collections() {
   const dispatch = useAppDispatch();
   const data = useAppSelector((state) => state.collections.list);
+
+  useEffect(() => {
+    dispatch(fetchCollections());
+  }, []);
 
   return (
     <div className="relative">
@@ -23,7 +26,7 @@ export default function Collections() {
       <CollectionCTA />
       <div className="flex justify-between">
         <h2 className="font-bold text-2xl text-customred mt-10 mb-8">
-          Gallerie des collections
+          Toutes les collections
         </h2>
         <Filter />
       </div>

@@ -9,15 +9,14 @@ import {
   ICollection,
   IObject,
 } from '../../types/types';
-import axios from 'axios';
 import { RootState } from '..';
+import api from '../../hooks/api';
 
 interface CollectionsState {
   list: ICollection[];
   currentCollection: CurrentCollection;
   randomCollection: ICollection[];
   collectionAlert: IAlert;
-  redirectPath: string;
 }
 
 export const initialState: CollectionsState = {
@@ -28,24 +27,19 @@ export const initialState: CollectionsState = {
     message: '',
     type: '',
   },
-  redirectPath: '',
 };
-
-const storedToken = localStorage.getItem('jwt');
-const token = storedToken ? JSON.parse(storedToken) : '';
-console.log('token', token);
 
 /**
  * Middleware for fetching all the collections
  *
- * Uses axios to request the /api/collections route and get all the collection from the API.
+ * Uses api to request the /api/collections route and get all the collection from the API.
  *
  * @return {Promise} Return a promise with collections when fulfilled.
  */
 export const fetchCollections = createAsyncThunk(
   'collections/fetchCollections',
   async (_, thunkAPI) => {
-    const response = await axios.get(
+    const response = await api.get(
       `${import.meta.env.VITE_API_PATH}collections`
     );
     return response.data;
@@ -57,7 +51,7 @@ export const fetchCollections = createAsyncThunk(
 export const fetchSingleCollection = createAsyncThunk(
   'collections/fetchSingleCollection',
   async (id: number, thunkAPI) => {
-    const response = await axios.get(
+    const response = await api.get(
       `${import.meta.env.VITE_API_PATH}collection/${id}`
     );
     return response.data;
@@ -71,37 +65,22 @@ export const uploadCollectionImage = createAsyncThunk(
     const formData = new FormData();
     formData.append('file', state.collections.currentCollection.image as File);
 
-    if (token) {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_PATH}secure/collection/upload_file`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      return response.data;
-    }
+    const response = await api.post(
+      `${import.meta.env.VITE_API_PATH}secure/collection/upload_file`,
+      formData
+    );
+    return response.data;
   }
 );
 
 export const deleteCollection = createAsyncThunk(
   'collections/deleteCollection',
   async (id: number, thunkAPI) => {
-    if (token) {
-      const response = await axios.delete(
-        `${import.meta.env.VITE_API_PATH}secure/collection/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      return response.data;
-    }
+    const response = await api.delete(
+      `${import.meta.env.VITE_API_PATH}secure/collection/${id}`
+    );
+    
+    return response.data;
   }
 );
 
@@ -109,60 +88,46 @@ export const updateCollection = createAsyncThunk(
   'collections/updateCollection',
 
   async (id: number, thunkAPI) => {
-    if (token) {
-      const state = thunkAPI.getState() as RootState;
-      const response = await axios.put(
-        `${import.meta.env.VITE_API_PATH}secure/collection/${id}`,
-        {
-          name: state.collections.currentCollection.name,
-          description: state.collections.currentCollection.description,
-          image: state.collections.currentCollection.image,
-          relatedObjects: state.collections.currentCollection.relatedObjects,
-          title:
-            'lorem ipsum dolor sit amet lorem ipsum dolor sit amet lorem ipsum dolor sit amet ',
-          is_active: true,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+    const state = thunkAPI.getState() as RootState;
+    const response = await api.put(
+      `${import.meta.env.VITE_API_PATH}secure/collection/${id}`,
+      {
+        name: state.collections.currentCollection.name,
+        description: state.collections.currentCollection.description,
+        image: state.collections.currentCollection.image,
+        relatedObjects: state.collections.currentCollection.relatedObjects,
+        title:
+          'lorem ipsum dolor sit amet lorem ipsum dolor sit amet lorem ipsum dolor sit amet ',
+        is_active: true,
+      }
+    );
 
-      return response.data;
-    }
+    return response.data;
   }
 );
 
 export const postCollection = createAsyncThunk(
   'collections/postCollection',
   async (_, thunkAPI) => {
-    if (token) {
-      const state = thunkAPI.getState() as RootState;
+    const state = thunkAPI.getState() as RootState;
 
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_PATH}secure/collection`,
-        {
-          ...state.collections.currentCollection,
-          title: state.collections.currentCollection.name,
-          is_active: true,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+    const response = await api.post(
+      `${import.meta.env.VITE_API_PATH}secure/collection`,
+      {
+        ...state.collections.currentCollection,
+        title: state.collections.currentCollection.name,
+        is_active: true,
+      }
+    );
 
-      return response.data;
-    }
+    return response.data;
   }
 );
 
 export const randomCollection = createAsyncThunk(
   'collections/randomCollection',
   async (_, thunkAPI) => {
-    const response = await axios.get(
+    const response = await api.get(
       `${import.meta.env.VITE_API_PATH}collection_random`
     );
     return response.data;
@@ -191,8 +156,6 @@ export const setCollectionRelatedObjects = createAction<IObject[]>(
   'collection/setCollectionRelatedObjects'
 );
 export const resetCollectionAlert = createAction('collection/resetAlert');
-
-export const setCollectionRedirectPath = createAction<string>('collection/setRedirectPath');
 
 const collectionsReducer = createReducer(initialState, (builder) => {
   builder
@@ -227,11 +190,9 @@ const collectionsReducer = createReducer(initialState, (builder) => {
     .addCase(deleteCollection.pending, (state, action) => {})
     .addCase(deleteCollection.fulfilled, (state, action) => {
       console.log('delete successfully');
-      state.redirectPath = `/user/${state.currentCollection.user?.id}`;
       state.currentCollection = {};
       state.collectionAlert.message = 'Collection deleted successfully';
       state.collectionAlert.type = 'success';
-      state.redirectPath = '';
     })
     .addCase(deleteCollection.rejected, (state, action) => {
       console.log('delete rejected');
@@ -256,9 +217,6 @@ const collectionsReducer = createReducer(initialState, (builder) => {
       state.currentCollection = action.payload;
       state.collectionAlert.message = 'Collection updated successfully';
       state.collectionAlert.type = 'success';
-      state.currentCollection.id
-        ? (state.redirectPath = `/collection/${state.currentCollection.id}`)
-        : '';
     })
     .addCase(updateCollection.rejected, (state, action) => {
       console.log('update rejected');
@@ -297,11 +255,7 @@ const collectionsReducer = createReducer(initialState, (builder) => {
       state.collectionAlert.message = '';
       state.collectionAlert.type = '';
     })
-    .addCase(setCollectionRedirectPath, (state, action) => {
-      state.redirectPath = action.payload;
-    });
     ;
 });
-
 
 export default collectionsReducer;
